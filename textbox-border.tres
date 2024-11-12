@@ -1,0 +1,23 @@
+[gd_resource type="TileSet" load_steps=3 format=3 uid="uid://cmbk1ib368tpo"]
+
+[ext_resource type="Texture2D" uid="uid://cn5rg7a1d08pw" path="res://textbox-border.png" id="1_j8bg4"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_0brjk"]
+texture = ExtResource("1_j8bg4")
+texture_region_size = Vector2i(8, 8)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+0:1/0 = 0
+1:1/next_alternative_id = 2
+1:1/0 = 0
+1:1/1 = 1
+1:1/1/modulate = Color(0.106667, 0.16, 0, 1)
+2:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+
+[resource]
+tile_size = Vector2i(8, 8)
+sources/0 = SubResource("TileSetAtlasSource_0brjk")
