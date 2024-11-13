@@ -1,4 +1,4 @@
-[gd_scene load_steps=65 format=4 uid="uid://er2npolmyo04"]
+[gd_scene load_steps=75 format=4 uid="uid://er2npolmyo04"]
 
 [ext_resource type="AudioStream" uid="uid://qmxvc8ko4ali" path="res://ambience.wav" id="1_8yojg"]
 [ext_resource type="Script" path="res://game.gd" id="1_kagn1"]
@@ -42,6 +42,8 @@
 [ext_resource type="AudioStream" uid="uid://dro1hfuerf8bm" path="res://npc-sound-2.wav" id="29_wps7x"]
 [ext_resource type="AudioStream" uid="uid://be4rjp6hdkfnq" path="res://guonk.wav" id="30_dradi"]
 [ext_resource type="AudioStream" uid="uid://072qm34rn2pq" path="res://dumb-song.ogg" id="35_rjist"]
+[ext_resource type="Shader" path="res://corruption.gdshader" id="43_5whme"]
+[ext_resource type="Script" path="res://seed_noise.gd" id="44_x4e1s"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_5kv3y"]
 blend_mode = 1
@@ -104,12 +106,83 @@ b = Vector2(96, 0)
 [sub_resource type="SegmentShape2D" id="SegmentShape2D_qwi7x"]
 b = Vector2(64, 0)
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_ck7e6"]
+noise_type = 0
+frequency = 1.0
+fractal_octaves = 2
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_2t0dm"]
+generate_mipmaps = false
+noise = SubResource("FastNoiseLite_ck7e6")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_y2nge"]
+shader = ExtResource("43_5whme")
+shader_parameter/noise_scale = 0.0
+shader_parameter/max_noise_offset = 10.0
+shader_parameter/max_noise_dimming = 0.2
+shader_parameter/noise = SubResource("NoiseTexture2D_2t0dm")
+
+[sub_resource type="Animation" id="Animation_ituv1"]
+resource_name = "fade in"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:effect_intensity")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.0, 1.0]
+}
+
+[sub_resource type="Animation" id="Animation_bus47"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:effect_intensity")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="Animation" id="Animation_yiqa7"]
+resource_name = "fade out"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:effect_intensity")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [1.0, 0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_rpcea"]
+_data = {
+"RESET": SubResource("Animation_bus47"),
+"fade in": SubResource("Animation_ituv1"),
+"fade out": SubResource("Animation_yiqa7")
+}
+
 [sub_resource type="CircleShape2D" id="CircleShape2D_35xyr"]
 radius = 1.0
 
 [sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_lt742"]
 closed = false
 polygon = PackedVector2Array(1203, -146, 1203, -161)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_epnfe"]
+size = Vector2(1806, 1434)
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_kagn1")
@@ -2288,10 +2361,30 @@ stream = ExtResource("35_rjist")
 autoplay = true
 max_distance = 200.0
 
+[node name="BackBufferCopy" type="BackBufferCopy" parent="."]
+z_index = 100
+position = Vector2(-52, -158)
+copy_mode = 2
+
 [node name="Player" parent="." instance=ExtResource("2_tro5t")]
 z_index = 1
 position = Vector2(148, -8)
 collision_layer = 2
+collision_mask = 9
+
+[node name="Shader" type="Panel" parent="Player"]
+z_index = 100
+material = SubResource("ShaderMaterial_y2nge")
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+script = ExtResource("44_x4e1s")
+
+[node name="Noise Fade Animation" type="AnimationPlayer" parent="Player/Shader"]
+libraries = {
+"": SubResource("AnimationLibrary_rpcea")
+}
 
 [node name="Player Camera" type="Camera2D" parent="Player"]
 position = Vector2(0, -32)
@@ -2346,9 +2439,20 @@ shadow_filter_smooth = 11.3
 texture = ExtResource("17_fkbvo")
 texture_scale = 32.0
 
+[node name="Corruption Area" type="Area2D" parent="."]
+position = Vector2(-52, -158)
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Corruption Area"]
+position = Vector2(2344, 391)
+shape = SubResource("RectangleShape2D_epnfe")
+
 [connection signal="body_entered" from="Research/Clutter/Lab Server 3/Player Sense" to="Research/Clutter/Lab Server 3" method="_on_player_sense_body_entered"]
 [connection signal="body_exited" from="Research/Clutter/Lab Server 3/Player Sense" to="Research/Clutter/Lab Server 3" method="_on_player_sense_body_exited"]
 [connection signal="body_entered" from="Robot 1/Player Sense" to="Robot 1" method="_on_player_sense_body_entered"]
 [connection signal="body_exited" from="Robot 1/Player Sense" to="Robot 1" method="_on_player_sense_body_exited"]
 [connection signal="body_entered" from="Robot 2/Player Sense" to="Robot 2" method="_on_player_sense_body_entered"]
 [connection signal="body_exited" from="Robot 2/Player Sense" to="Robot 2" method="_on_player_sense_body_exited"]
+[connection signal="body_entered" from="Corruption Area" to="Player/Shader" method="_on_corruption_area_body_entered"]
+[connection signal="body_exited" from="Corruption Area" to="Player/Shader" method="_on_corruption_area_body_exited"]
